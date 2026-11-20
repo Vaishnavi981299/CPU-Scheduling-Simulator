@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CPU Scheduling Simulator</title>
+<style>
+:root{--bg:#0a0a0c;--card:#111114;--bd:#232329;--ib:#2b2b32;--tx:#f4f4f5;--mu:#9a9aa3;--cy:#22b8d8;--btn:#1d1d22;--mono:"JetBrains Mono",ui-monospace,Consolas,"Courier New",monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:13px/1.45 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{height:43px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:12px;padding:0 18px}
+header b{font-size:15px}header small{color:var(--mu);font-size:11px}
+.app{max-width:1460px;margin:14px auto;padding:0 14px;display:grid;grid-template-columns:350px 1fr;gap:15px;align-items:start}
+.col{display:grid;gap:14px;min-width:0}
+.c{background:var(--card);border:1px solid var(--bd);border-radius:6px;padding:12px}
+.c>h3{margin:0 0 10px;font-size:13px;color:var(--mu);font-weight:600}
+.hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;min-height:24px}
+.hd h3{margin:0;font-size:13px;color:var(--mu);font-weight:600}
+button,input{font:inherit;color:var(--tx)}
+button{background:var(--btn);border:1px solid transparent;border-radius:5px;padding:8px 11px;cursor:pointer}
+button:hover{filter:brightness(1.25)}
+button.on{border-color:var(--cy);color:var(--cy);background:#0f2329}
+button.pr{background:var(--cy);color:#04222b;font-weight:500}
+button.sm{padding:3px 9px;font-size:11px}
+:focus-visible{outline:2px solid var(--cy);outline-offset:1px}
+input{background:var(--bg);border:1px solid var(--ib);border-radius:4px;height:34px;padding:0 9px;width:100%}
+input::placeholder{color:#55555e}
+.bs{display:flex;flex-wrap:wrap;gap:6px}
+.g4{display:grid;grid-template-columns:1fr 1fr 1fr 34px;gap:7px;margin-bottom:6px}
+.g4 button{padding:0;display:grid;place-items:center;height:34px}
+.lh{color:var(--mu);font-size:11px;margin:14px 0 6px}
+.lh.g4{margin:14px 0 6px}
+.add{background:var(--cy);color:#fff;font-size:18px}
+label.k{display:block;color:var(--mu);font-size:11px;margin:12px 0 5px}
+label.ck{display:flex;gap:8px;align-items:center;margin-top:12px;font-size:13px}
+label.ck input{width:14px;height:14px}
+.sw{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.sw .c{padding:14px 12px 12px}
+.sw b{display:block;font:700 20px var(--mono);color:#1ec0e0}
+.sw span{color:var(--mu);font-size:11.5px}
+.gw{position:relative;margin:2px 0 4px}
+.bar{display:flex;height:44px}
+.blk{display:grid;place-items:center;color:#14141a;font:700 11px var(--mono);cursor:pointer;overflow:hidden;border-right:1px solid #111114;transition:opacity .15s}
+.blk:hover{filter:brightness(1.12)}
+.blk.fut{opacity:.28}
+.blk.now{box-shadow:inset 0 0 0 2px #fff}
+.blk.idle{color:var(--mu);background-image:repeating-linear-gradient(45deg,transparent 0 5px,#3a3a42 5px 10px)}
+.axis{position:relative;height:20px;margin-top:3px}
+.axis i{position:absolute;font:normal 9.5px var(--mono);color:var(--mu);transform:translateX(-50%)}
+.axis i:first-child{transform:none}
+.cur{position:absolute;top:-6px;height:62px;width:2px;background:#fff;box-shadow:0 0 6px #22b8d8;margin-left:-1px;pointer-events:none}
+.cpu{border:1px solid var(--cy);border-radius:4px;padding:11px 9px;display:flex;gap:70px;align-items:center;margin-bottom:8px;min-height:38px}
+.rq{border:1px solid var(--ib);border-radius:4px;padding:10px 9px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;min-height:38px}
+.cpu small,.rq small{font:11px var(--mono);color:var(--mu)}
+.cpu small{width:50px}
+.chip{display:inline-block;font:700 10.5px var(--mono);color:#14141a;padding:2px 7px;border-radius:3px}
+.rem{color:var(--mu);font:10.5px var(--mono);margin:0 8px 0 3px}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:560px}
+th{font:600 10.5px var(--mono);color:var(--mu);text-align:right;padding:8px 8px;border-bottom:1px solid var(--bd)}
+td{padding:7px 8px;text-align:right;font:12px var(--mono);border-bottom:1px solid #1b1b20}
+th:first-child,td:first-child,th:last-child,td:last-child{text-align:left}
+td.d{color:#fff}td.w{color:var(--mu)}
+.st{font:9.5px var(--mono);border:1px solid;border-radius:10px;padding:1px 7px;display:inline-block;letter-spacing:.03em}
+.st.C{color:#34d399;border-color:#10b98199}.st.R{color:#22d3ee;border-color:#22b8d8}.st.Y{color:#fbbf24;border-color:#d9a21b88}.st.N{color:var(--mu);border-color:var(--ib)}
+tr.nowr td{background:#0f2329}
+#log{list-style:none;margin:0;padding:0;max-height:230px;overflow:auto;font-size:12.5px}
+#log li{padding:3px 0;border-bottom:1px solid #1b1b20}#log li b{font:11px var(--mono);color:var(--cy);margin-right:8px}
+#log li.d{color:#34d399}#log li.last{background:#0f2329}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.pane{display:none}.pane.on{display:block}
+pre{background:#08080a;border:1px solid var(--bd);color:#cde6ee;padding:11px;border-radius:5px;overflow:auto;font:12px/1.5 var(--mono);margin:6px 0}
+.pane p,.pane li{max-width:90ch}.pane li{margin:3px 0}
+details{border-bottom:1px solid var(--bd);padding:7px 0}summary{cursor:pointer;font-weight:600}details p{color:var(--mu);margin:6px 0 2px}
+@media(max-width:900px){.app{grid-template-columns:1fr}.sw{grid-template-columns:1fr 1fr}}
+@media(prefers-reduced-motion:reduce){.blk{transition:none}}
+</style>
+</head>
+<body>
+<header>
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#22b8d8" stroke-width="2" stroke-linecap="round"><path d="M2 5h16M2 10h10M2 15h16"/></svg>
+<b>CPU Scheduling Simulator</b><small>FCFS / SJF-SRTF / Round Robin / MLFQ</small>
+</header>
+
+<div class="app">
+<!-- ============ LEFT COLUMN ============ -->
+<div class="col">
+<div class="c"><h3>Preset scenarios</h3>
+<div class="bs"><button data-pre="std">Standard Mix</button><button data-pre="conv">Convoy Effect Demo</button><button data-pre="mlfq">MLFQ Aging &amp; Demotion Demo</button></div></div>
+
+<div class="c"><h3>Process manager</h3>
+<div class="g4"><input id="nid" aria-label="Process ID"><input id="nat" type="number" min="0" placeholder="AT" aria-label="Arrival time"><input id="nbt" type="number" min="1" placeholder="BT" aria-label="Burst time"><button class="add" id="plus" aria-label="Add process">+</button></div>
+<div class="bs"><button class="pr" id="addB">Add Process</button><button id="clrB">Clear All</button></div>
+<div class="lh g4"><span>ID</span><span>AT</span><span>BT</span><span></span></div>
+<div id="plist"></div></div>
+
+<div class="c"><h3>Algorithm</h3>
+<div class="bs" id="algs"><button data-a="FCFS">FCFS</button><button data-a="SJF" class="on">SJF</button><button data-a="RR">Round Robin</button><button data-a="MLFQ">MLFQ</button></div>
+<label class="ck" id="preL"><input type="checkbox" id="pre">Preemptive (SRTF)</label>
+<label class="k" for="q">Time quantum Q</label><input id="q" type="number" min="1" value="2">
+<div id="ageW" style="display:none"><label class="k" for="age">MLFQ aging threshold (time units)</label><input id="age" type="number" min="1" value="10"></div>
+</div>
+</div>
+
+<!-- ============ RIGHT COLUMN ============ -->
+<div class="col">
+<div class="sw">
+<div class="c"><b id="sTat">–</b><span>Average Turnaround Time</span></div>
+<div class="c"><b id="sWt">–</b><span>Average Waiting Time</span></div>
+<div class="c"><b id="sCpu">–</b><span>CPU Utilization</span></div>
+<div class="c"><b id="sThr">–</b><span>Throughput (proc / unit)</span></div>
+</div>
+
+<div class="c"><div class="hd"><h3>Gantt chart (click a block to jump to it)</h3></div>
+<div class="gw" id="gantt"></div></div>
+
+<div class="c"><div class="hd"><h3>Ready queue state at t</h3>
+<span><span id="tNow" style="font:11px var(--mono);color:var(--mu);margin-right:8px"></span><button class="sm" id="playB">Play</button> <button class="sm" id="stepB">Step</button> <button class="sm" id="rstB">Reset</button></span></div>
+<div class="cpu"><small>CPU</small><span id="cpuV">IDLE</span></div>
+<div class="rq"><small>Ready queue (head first)</small><span id="rqV">empty</span></div></div>
+
+<div class="c"><h3>Process metrics</h3>
+<div class="tw"><table><thead><tr><th>Process ID</th><th>Arrival (AT)</th><th>Burst (BT)</th><th>Completion (CT)</th><th>Turnaround (TAT)</th><th>Waiting (WT)</th><th>Status</th></tr></thead><tbody id="mb"></tbody></table></div></div>
+
+<div class="c"><h3>Operation log</h3><ol id="log"></ol></div>
+
+<div class="c"><h3>Lab procedure</h3>
+<div class="tabs"><button data-t="aim" class="on">Aim</button><button data-t="pseudo">Pseudo code</button><button data-t="ccode">C code</button><button data-t="io">Input / Output</button><button data-t="faq">FAQ</button></div>
+<div class="pane on" id="p-aim"></div>
+<div class="pane" id="p-pseudo"><pre id="pseudo"></pre></div>
+<div class="pane" id="p-ccode"><pre id="ccode"></pre></div>
+<div class="pane" id="p-io"></div>
+<div class="pane" id="p-faq">
+<details open><summary>Preemptive vs non-preemptive scheduling?</summary><p>A non-preemptive algorithm lets a process keep the CPU until it finishes. A preemptive one (SRTF, Round Robin, MLFQ) can take the CPU away, for example when a shorter job arrives or the quantum expires.</p></details>
+<details><summary>Why is SJF optimal for average waiting time?</summary><p>Running the shortest job first reduces how long every other job waits behind it. It needs burst times to be known or predicted.</p></details>
+<details><summary>What is the convoy effect?</summary><p>In FCFS, many short processes wait behind one long process, lowering CPU and device utilization. Try the Convoy Effect Demo preset.</p></details>
+<details><summary>What is starvation and how does aging fix it?</summary><p>A long process may never run if shorter jobs keep arriving (SJF/SRTF), or if a lower MLFQ queue is always preempted. Aging raises the priority of a process the longer it waits.</p></details>
+<details><summary>How does the time quantum affect Round Robin?</summary><p>A very large quantum behaves like FCFS. A very small one causes many context switches and wastes CPU time.</p></details>
+<details><summary>How are TAT, WT, utilization and throughput calculated?</summary><p>TAT = CT − AT. WT = TAT − BT. Utilization = busy time ÷ total time. Throughput = processes completed ÷ total time.</p></details>
+<details><summary>How does MLFQ work here?</summary><p>Three queues: Q0 (round robin, quantum Q), Q1 (round robin, quantum 2Q) and Q2 (FCFS). New processes enter Q0, a process that uses its whole quantum is demoted, and a process waiting longer than the aging threshold is promoted.</p></details>
+</div></div>
+</div>
+</div>
+
+<script type="text/plain" id="s-FCFS">1. Read n, then AT and BT of every process.
+2. Sort processes by arrival time.
+3. t = 0
+4. For each process in order:
+     if t < AT: t = AT                (CPU idle)
+     t = t + BT;  CT = t
+     TAT = CT - AT;  WT = TAT - BT
+5. Print the table and the averages of TAT and WT.</script>
+<script type="text/plain" id="s-SJF">1. Read n, then AT and BT of every process.
+2. t = 0, done = 0
+3. While done < n:
+     ready = processes with AT <= t and not finished
+     if ready is empty: t = t + 1; continue   (CPU idle)
+     pick p in ready with the smallest BT (tie: earlier AT)
+     t = t + BT[p];  CT[p] = t
+     TAT = CT - AT;  WT = TAT - BT;  done = done + 1
+4. Print the table and the averages.</script>
+<script type="text/plain" id="s-SRTF">1. Read n, AT and BT; set REM[i] = BT[i].
+2. t = 0, done = 0
+3. While done < n:
+     ready = processes with AT <= t and REM > 0
+     if ready is empty: t = t + 1; continue
+     pick p in ready with the smallest REM
+     run p for 1 unit: REM[p] = REM[p] - 1;  t = t + 1
+     if REM[p] == 0: CT[p] = t; TAT = CT - AT; WT = TAT - BT; done++
+4. Print the table and the averages.</script>
+<script type="text/plain" id="s-RR">1. Read n, AT, BT and the time quantum Q; REM[i] = BT[i].
+2. t = 0; put processes with AT <= t into the queue.
+3. While not all finished:
+     if queue is empty: t = t + 1; add new arrivals; continue
+     p = dequeue()
+     run = min(Q, REM[p]);  t = t + run;  REM[p] = REM[p] - run
+     add processes that arrived up to t to the queue
+     if REM[p] > 0: enqueue(p)
+     else: CT[p] = t; TAT = CT - AT; WT = TAT - BT
+4. Print the table and the averages.</script>
+<script type="text/plain" id="s-MLFQ">Queues: Q0 = RR (quantum Q), Q1 = RR (quantum 2Q), Q2 = FCFS
+1. A new process enters the tail of Q0.
+2. Every time unit, run the head of the highest-priority non-empty queue
+   (a higher queue preempts a lower one).
+3. If a process uses its whole quantum: demote it one level
+   (not below Q2) and put it at the tail of that queue.
+4. If a process waits >= AGE units in a lower queue: promote it one level (aging).
+5. When REM becomes 0: CT = t, TAT = CT - AT, WT = TAT - BT.
+6. Print the table and the averages.</script>
+
+<script type="text/plain" id="c-FCFS">#include <stdio.h>
+struct P { int id, at, bt; };
+int main() {
+    struct P p[20], x; int n, i, j, t = 0; float ta = 0, wa = 0;
+    scanf("%d", &n);
+    for (i = 0; i < n; i++) { p[i].id = i + 1; scanf("%d %d", &p[i].at, &p[i].bt); }
+    for (i = 0; i < n; i++)                       /* sort by arrival */
+        for (j = 0; j < n - i - 1; j++)
+            if (p[j].at > p[j+1].at) { x = p[j]; p[j] = p[j+1]; p[j+1] = x; }
+    printf("PID AT BT CT TAT WT\n");
+    for (i = 0; i < n; i++) {
+        if (t < p[i].at) t = p[i].at;             /* CPU idle */
+        t += p[i].bt;
+        int tat = t - p[i].at, wt = tat - p[i].bt;
+        ta += tat; wa += wt;
+        printf("P%d  %d  %d  %d  %d  %d\n", p[i].id, p[i].at, p[i].bt, t, tat, wt);
+    }
+    printf("Avg TAT = %.2f, Avg WT = %.2f\n", ta / n, wa / n);
+    return 0;
+}</script>
+<script type="text/plain" id="c-SJF">#include <stdio.h>
+int main() {
+    int n, i, t = 0, done = 0, at[20], bt[20], d[20] = {0};
+    float ta = 0, wa = 0;
+    scanf("%d", &n);
+    for (i = 0; i < n; i++) scanf("%d %d", &at[i], &bt[i]);
+    printf("PID AT BT CT TAT WT\n");
+    while (done < n) {
+        int k = -1;
+        for (i = 0; i < n; i++)
+            if (!d[i] && at[i] <= t && (k < 0 || bt[i] < bt[k])) k = i;
+        if (k < 0) { t++; continue; }             /* CPU idle */
+        t += bt[k]; d[k] = 1; done++;
+        int tat = t - at[k], wt = tat - bt[k];
+        ta += tat; wa += wt;
+        printf("P%d  %d  %d  %d  %d  %d\n", k + 1, at[k], bt[k], t, tat, wt);
+    }
+    printf("Avg TAT = %.2f, Avg WT = %.2f\n", ta / n, wa / n);
+    return 0;
+}</script>
+<script type="text/plain" id="c-SRTF">#include <stdio.h>
+int main() {
+    int n, i, t = 0, done = 0, at[20], bt[20], rem[20];
+    float ta = 0, wa = 0;
+    scanf("%d", &n);
+    for (i = 0; i < n; i++) { scanf("%d %d", &at[i], &bt[i]); rem[i] = bt[i]; }
+    printf("PID AT BT CT TAT WT\n");
+    while (done < n) {
+        int k = -1;
+        for (i = 0; i < n; i++)
+            if (rem[i] > 0 && at[i] <= t && (k < 0 || rem[i] < rem[k])) k = i;
+        if (k < 0) { t++; continue; }
+        rem[k]--; t++;                            /* run one time unit */
+        if (rem[k] == 0) {
+            int tat = t - at[k], wt = tat - bt[k];
+            ta += tat; wa += wt; done++;
+            printf("P%d  %d  %d  %d  %d  %d\n", k + 1, at[k], bt[k], t, tat, wt);
+        }
+    }
+    printf("Avg TAT = %.2f, Avg WT = %.2f\n", ta / n, wa / n);
+    return 0;
+}</script>
+<script type="text/plain" id="c-RR">#include <stdio.h>
+int main() {
+    int n, q, i, k, t = 0, done = 0, f = 0, r = 0;
+    int at[20], bt[20], rem[20], in[20] = {0}, queue[500];
+    float ta = 0, wa = 0;
+    scanf("%d", &n);
+    for (i = 0; i < n; i++) { scanf("%d %d", &at[i], &bt[i]); rem[i] = bt[i]; }
+    scanf("%d", &q);
+    for (i = 0; i < n; i++) if (at[i] <= t) { queue[r++] = i; in[i] = 1; }
+    printf("PID AT BT CT TAT WT\n");
+    while (done < n) {
+        if (f == r) {                             /* CPU idle */
+            t++;
+            for (i = 0; i < n; i++) if (!in[i] && at[i] <= t) { queue[r++] = i; in[i] = 1; }
+            continue;
+        }
+        k = queue[f++];
+        int run = rem[k] < q ? rem[k] : q;
+        t += run; rem[k] -= run;
+        for (i = 0; i < n; i++) if (!in[i] && at[i] <= t) { queue[r++] = i; in[i] = 1; }
+        if (rem[k] > 0) queue[r++] = k;
+        else {
+            int tat = t - at[k], wt = tat - bt[k];
+            ta += tat; wa += wt; done++;
+            printf("P%d  %d  %d  %d  %d  %d\n", k + 1, at[k], bt[k], t, tat, wt);
+        }
+    }
+    printf("Avg TAT = %.2f, Avg WT = %.2f\n", ta / n, wa / n);
+    return 0;
+}</script>
+<script type="text/plain" id="c-MLFQ">#include <stdio.h>
+int main() {
+    int n, i, k, Q, age, t = 0, done = 0, cur = -1;
+    int at[20], bt[20], rem[20], lv[20] = {0}, used[20] = {0}, ent[20] = {0}, adm[20] = {0};
+    float ta = 0, wa = 0;
+    scanf("%d", &n);
+    for (i = 0; i < n; i++) { scanf("%d %d", &at[i], &bt[i]); rem[i] = bt[i]; }
+    scanf("%d %d", &Q, &age);                     /* base quantum, aging threshold */
+    printf("PID AT BT CT TAT WT\n");
+    while (done < n) {
+        for (i = 0; i < n; i++) if (!adm[i] && at[i] <= t) { adm[i] = 1; ent[i] = at[i]; }
+        for (i = 0; i < n; i++)                   /* aging: promote long waiters */
+            if (adm[i] && rem[i] > 0 && i != cur && lv[i] > 0 && t - ent[i] >= age)
+                { lv[i]--; ent[i] = t; used[i] = 0; }
+        k = -1;                                   /* highest queue, then oldest entry */
+        for (i = 0; i < n; i++) {
+            if (!adm[i] || rem[i] == 0) continue;
+            if (k < 0 || lv[i] < lv[k] || (lv[i] == lv[k] && ent[i] < ent[k])) k = i;
+        }
+        if (k < 0) { cur = -1; t++; continue; }   /* CPU idle */
+        cur = k; rem[k]--; used[k]++; t++;
+        if (rem[k] == 0) {
+            int tat = t - at[k], wt = tat - bt[k];
+            ta += tat; wa += wt; done++; cur = -1;
+            printf("P%d  %d  %d  %d  %d  %d\n", k + 1, at[k], bt[k], t, tat, wt);
+        } else if (used[k] >= (lv[k] == 0 ? Q : lv[k] == 1 ? 2 * Q : 1000000)) {
+            if (lv[k] < 2) lv[k]++;               /* demote */
+            used[k] = 0; ent[k] = t; cur = -1;
+        }
+    }
+    printf("Avg TAT = %.2f, Avg WT = %.2f\n", ta / n, wa / n);
+    return 0;
+}</script>
+
+<script>
+const $=id=>document.getElementById(id);
+const COL=['#38bdf8','#a78bfa','#f472b6','#fb923c','#a3e635','#facc15','#2dd4bf','#f87171'];
+const NAMES={FCFS:'First Come First Served (FCFS)',SJF:'Shortest Job First (SJF)',SRTF:'Shortest Remaining Time First (SRTF)',RR:'Round Robin (RR)',MLFQ:'Multi-Level Feedback Queue (MLFQ)'};
+const PRE={std:{a:'SJF',p:[[0,5],[1,3],[2,8],[3,2],[4,4]]},conv:{a:'FCFS',p:[[0,20],[1,2],[2,3],[3,2],[4,4]]},mlfq:{a:'MLFQ',p:[[0,18],[1,4],[2,10],[5,3],[8,6],[9,2]],q:2,age:8}};
+let P=[],algo='SJF',pre=false,R,t=0,timer=null,cnt=0;
+const key=()=>algo==='SJF'&&pre?'SRTF':algo;
+const qv=()=>Math.max(1,+$('q').value||1),av=()=>Math.max(1,+$('age').value||1);
+
+function sim(a,q,age,ps){
+  const n=ps.length,rem=ps.map(p=>p.bt),ct=Array(n).fill(0),segs=[],extra=[];
+  let t=0,fin=0;
+  const push=(i,s,e,l=0)=>{const x=segs[segs.length-1];if(x&&x.i===i&&x.e===s&&x.l===l)x.e=e;else segs.push({i,s,e,l});};
+  if(a==='RR'){
+    const ord=ps.map((_,i)=>i).sort((x,y)=>ps[x].at-ps[y].at||x-y);let k=0;const qu=[];
+    const adm=()=>{while(k<n&&ps[ord[k]].at<=t)qu.push(ord[k++]);};
+    while(fin<n){adm();
+      if(!qu.length){const nx=ps[ord[k]].at;push(-1,t,nx);t=nx;continue;}
+      const i=qu.shift(),r=Math.min(q,rem[i]);push(i,t,t+r);t+=r;rem[i]-=r;adm();
+      if(rem[i]>0)qu.push(i);else{ct[i]=t;fin++;}}
+  }else if(a==='MLFQ'){
+    const lv=Array(n).fill(0),used=Array(n).fill(0),ent=Array(n).fill(0),ad=Array(n).fill(false),qs=[q,2*q,1e9];let cur=-1;
+    while(fin<n){
+      for(let i=0;i<n;i++)if(!ad[i]&&ps[i].at<=t){ad[i]=true;ent[i]=ps[i].at;}
+      const rd=[];for(let i=0;i<n;i++)if(ad[i]&&rem[i]>0)rd.push(i);
+      if(!rd.length){const nx=Math.min(...ps.filter((_,i)=>!ad[i]).map(p=>p.at));push(-1,t,nx);t=nx;cur=-1;continue;}
+      rd.forEach(i=>{if(i!==cur&&lv[i]>0&&t-ent[i]>=age){lv[i]--;ent[i]=t;used[i]=0;extra.push({t,msg:`${ps[i].id} waited ${age}+ units and is promoted (aging) to Q${lv[i]}.`});}});
+      rd.sort((x,y)=>lv[x]-lv[y]||ent[x]-ent[y]||x-y);
+      const i=rd[0];cur=i;push(i,t,t+1,lv[i]);rem[i]--;used[i]++;t++;
+      if(!rem[i]){ct[i]=t;fin++;cur=-1;}
+      else if(used[i]>=qs[lv[i]]){if(lv[i]<2){lv[i]++;extra.push({t,msg:`${ps[i].id} used its full quantum and is demoted to Q${lv[i]}.`});}used[i]=0;ent[i]=t;cur=-1;}
+    }
+  }else{
+    const done=Array(n).fill(false);
+    while(fin<n){
+      const rd=[...Array(n).keys()].filter(i=>!done[i]&&ps[i].at<=t);
+      if(!rd.length){const nx=Math.min(...ps.filter((_,i)=>!done[i]).map(p=>p.at));push(-1,t,nx);t=nx;continue;}
+      rd.sort(a==='FCFS'?(x,y)=>ps[x].at-ps[y].at||x-y:(x,y)=>rem[x]-rem[y]||ps[x].at-ps[y].at||x-y);
+      const i=rd[0],run=a==='SRTF'?1:rem[i];push(i,t,t+run);t+=run;rem[i]-=run;
+      if(!rem[i]){done[i]=true;ct[i]=t;fin++;}
+    }
+  }
+  const end=segs.length?segs[segs.length-1].e:0;
+  return{segs,ct,extra,end};
+}
+
+function events(a,ps,r){
+  const ev=[],why={FCFS:'it arrived first',SJF:'it has the shortest burst among ready processes',SRTF:'it has the shortest remaining time',RR:'it is at the front of the queue, quantum '+qv(),MLFQ:'it is in the highest-priority non-empty queue'};
+  const pw={SRTF:'a process with shorter remaining time is ready',RR:'its time quantum expired',MLFQ:'its quantum expired or a higher queue has work'};
+  ps.forEach(p=>ev.push({t:p.at,o:0,m:`${p.id} arrives and joins the ready queue.`}));
+  r.segs.forEach(g=>{
+    if(g.i<0){ev.push({t:g.s,o:3,m:`No process is ready: CPU is idle until t=${g.e}.`});return;}
+    const p=ps[g.i];
+    ev.push({t:g.s,o:3,m:`${p.id} gets the CPU${a==='MLFQ'?' from Q'+g.l:''} because ${why[a]}; it runs until t=${g.e}.`});
+    if(r.ct[g.i]===g.e){const tat=g.e-p.at;ev.push({t:g.e,o:1,d:1,m:`${p.id} completes. CT=${g.e}, TAT=${g.e}−${p.at}=${tat}, WT=${tat}−${p.bt}=${tat-p.bt}.`});}
+    else ev.push({t:g.e,o:2,m:`${p.id} is preempted (${pw[a]}) and returns to the ready queue.`});
+  });
+  r.extra.forEach(x=>ev.push({t:x.t,o:2,m:x.msg}));
+  return ev.sort((x,y)=>x.t-y.t||x.o-y.o);
+}
+
+function recalc(){
+  R=sim(key(),qv(),av(),P);R.ev=events(key(),P,R);
+  stop();t=R.end;draw();docs();
+}
+function stop(){clearInterval(timer);timer=null;}
+
+function draw(){
+  const n=P.length,E=R.end;
+  // stats
+  let st=0,sw=0,busy=0;P.forEach((p,i)=>{const tt=R.ct[i]-p.at;st+=tt;sw+=tt-p.bt;});
+  R.segs.forEach(g=>{if(g.i>=0)busy+=g.e-g.s;});
+  $('sTat').textContent=n?(st/n).toFixed(2):'–';$('sWt').textContent=n?(sw/n).toFixed(2):'–';
+  $('sCpu').textContent=E?(busy/E*100).toFixed(1)+'%':'–';$('sThr').textContent=E?(n/E).toFixed(3):'–';
+  // gantt
+  const g=$('gantt');
+  if(!n){g.innerHTML='<div style="color:var(--mu);padding:14px 0">Add a process to see the chart.</div>';}
+  else{
+    let h='<div class="bar">'+R.segs.map((s,k)=>{const idle=s.i<0;
+      const c='blk'+(idle?' idle':'')+(s.s>=t&&t<E?' fut':'')+(s.s<=t&&t<s.e&&t<E?' now':'');
+      return `<div class="${c}" data-k="${k}" style="flex:${s.e-s.s} 0 0;${idle?'':'background:'+COL[s.i%8]}" title="${idle?'Idle':P[s.i].id+(algo==='MLFQ'?' (Q'+s.l+')':'')}: t=${s.s} to ${s.e}">${idle?'Idle':P[s.i].id}</div>`;}).join('')+'</div><div class="axis">';
+    let last=-9;const pts=R.segs.map(s=>s.s).concat(E);
+    pts.forEach(v=>{const pc=v/E*100;if(pc-last>=2.2||v===E){h+=`<i style="left:${pc}%">${v}</i>`;last=pc;}});
+    h+=`</div><div class="cur" style="left:${t/E*100}%"></div>`;g.innerHTML=h;
+  }
+  // ready queue
+  const run=R.segs.find(s=>s.i>=0&&s.s<=t&&t<s.e);
+  const ex=i=>R.segs.reduce((a,s)=>a+(s.i===i?Math.max(0,Math.min(s.e,t)-s.s):0),0);
+  const rd=[];P.forEach((p,i)=>{if(p.at<=t&&R.ct[i]>t&&!(run&&run.i===i)){const nx=R.segs.find(s=>s.i===i&&s.s>=t);rd.push({i,k:nx?nx.s:1e9,l:nx?nx.l:0});}});
+  rd.sort((a,b)=>a.k-b.k||a.i-b.i);
+  const chip=i=>`<span class="chip" style="background:${COL[i%8]}">${P[i].id}</span>`;
+  $('tNow').textContent='t = '+t;
+  $('cpuV').innerHTML=run?chip(run.i)+`<span class="rem">remaining ${P[run.i].bt-ex(run.i)}${algo==='MLFQ'?' · Q'+run.l:''}</span>`:'<span style="color:var(--mu)">IDLE</span>';
+  $('rqV').innerHTML=rd.length?rd.map(o=>chip(o.i)+`<span class="rem">rem ${P[o.i].bt-ex(o.i)}${algo==='MLFQ'?' · Q'+o.l:''}</span>`).join(''):'<span style="color:#cfcfd6">empty</span>';
+  // metrics
+  $('mb').innerHTML=P.map((p,i)=>{const d=R.ct[i]<=t,r=run&&run.i===i,w=p.at<=t;
+    const stt=d?['C','COMPLETED']:r?['R','RUNNING']:w?['Y','READY']:['N','NOT ARRIVED'];
+    const ct=R.ct[i],tat=ct-p.at;
+    return `<tr class="${r?'nowr':''}"><td>${chip(i)}</td><td>${p.at}</td><td>${p.bt}</td><td class="${d?'d':'w'}">${d?ct:'–'}</td><td class="${d?'d':'w'}">${d?tat:'–'}</td><td class="${d?'d':'w'}">${d?tat-p.bt:'–'}</td><td><span class="st ${stt[0]}">${stt[1]}</span></td></tr>`;}).join('');
+  // log
+  const vis=R.ev.filter(e=>e.t<=t);
+  $('log').innerHTML=vis.length?vis.map((e,k)=>`<li class="${e.d?'d':''}${k===vis.length-1&&t<E?' last':''}"><b>t=${e.t}</b>${e.m}</li>`).join(''):'<li>Press Play or Step to start. Nothing has happened at t=0 yet.</li>';
+  $('log').scrollTop=1e6;
+}
+
+function plist(){
+  $('plist').innerHTML=P.map((p,i)=>`<div class="g4"><input data-i="${i}" data-f="id" value="${p.id}" aria-label="ID"><input type="number" data-i="${i}" data-f="at" value="${p.at}" aria-label="AT"><input type="number" data-i="${i}" data-f="bt" value="${p.bt}" aria-label="BT"><button data-del="${i}" aria-label="Remove ${p.id}"><svg width="14" height="14" viewBox="0 0 16 16" fill="#f4f4f5"><path d="M6 1h4l1 1h4v2H1V2h4zM3 5h10l-1 10H4z"/></svg></button></div>`).join('');
+  $('nid').value='P'+(cnt+1);
+}
+function addP(){
+  const at=+$('nat').value,bt=+$('nbt').value,id=$('nid').value.trim()||'P'+(cnt+1);
+  if($('nat').value===''||!Number.isInteger(at)||at<0||!Number.isInteger(bt)||bt<1){alert('Enter a whole-number AT (0 or more) and BT (1 or more).');return;}
+  P.push({id,at,bt});cnt++;$('nat').value='';$('nbt').value='';plist();recalc();$('nat').focus();
+}
+function setAlgo(a){
+  algo=a;document.querySelectorAll('#algs button').forEach(b=>b.classList.toggle('on',b.dataset.a===a));
+  $('preL').style.display=a==='SJF'?'flex':'none';$('ageW').style.display=a==='MLFQ'?'block':'none';
+}
+function load(k){
+  const d=PRE[k];P=d.p.map((x,i)=>({id:'P'+(i+1),at:x[0],bt:x[1]}));cnt=P.length;
+  setAlgo(d.a);pre=false;$('pre').checked=false;$('q').value=d.q||2;$('age').value=d.age||10;plist();recalc();
+}
+
+document.querySelectorAll('[data-pre]').forEach(b=>b.onclick=()=>load(b.dataset.pre));
+$('addB').onclick=$('plus').onclick=addP;
+$('clrB').onclick=()=>{P=[];cnt=0;plist();recalc();};
+document.querySelectorAll('#algs button').forEach(b=>b.onclick=()=>{setAlgo(b.dataset.a);recalc();});
+$('pre').onchange=e=>{pre=e.target.checked;recalc();};
+$('q').onchange=$('age').onchange=recalc;
+$('plist').addEventListener('change',e=>{
+  const i=e.target.dataset.i,f=e.target.dataset.f;if(i===undefined)return;
+  const v=f==='id'?e.target.value.trim():+e.target.value;
+  const ok=f==='id'?v!=='':Number.isInteger(v)&&(f==='at'?v>=0:v>=1);
+  if(!ok){e.target.value=P[i][f];return;}P[i][f]=v;recalc();});
+$('plist').addEventListener('click',e=>{const b=e.target.closest('[data-del]');if(b){P.splice(+b.dataset.del,1);plist();recalc();}});
+$('gantt').addEventListener('click',e=>{const b=e.target.closest('.blk');if(b){stop();t=R.segs[+b.dataset.k].s;draw();}});
+$('playB').onclick=()=>{if(!R.end)return;stop();if(t>=R.end)t=0;draw();timer=setInterval(()=>{if(t>=R.end){stop();return;}t++;draw();},450);};
+$('stepB').onclick=()=>{stop();if(t>=R.end)t=0;else t++;draw();};
+$('rstB').onclick=()=>{stop();t=0;draw();};
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on',p.id==='p-'+b.dataset.t));});
+
+function docs(){
+  const a=key(),nm=NAMES[a],q=qv(),ag=av();
+  $('p-aim').innerHTML=`<p><b>Aim:</b> To write and simulate a program that schedules processes using <b>${nm}</b> and calculates the Completion Time (CT), Turnaround Time (TAT) and Waiting Time (WT) of each process, with their averages.</p>
+  <p><b>Procedure:</b></p><ol><li>Enter the arrival time (AT) and burst time (BT) of every process, or load a preset.</li><li>Choose the algorithm${a==='RR'||a==='MLFQ'?' and set the time quantum Q':''}.</li><li>Press Play or Step, or click a Gantt block, to move the time cursor and watch the ready queue, metrics and log.</li><li>Check the table with TAT = CT − AT and WT = TAT − BT.</li></ol>
+  <p><b>Result:</b> The ${nm} schedule was simulated and the average turnaround and waiting times were calculated.</p>`;
+  $('pseudo').textContent=$('s-'+a).textContent;$('ccode').textContent=$('c-'+a).textContent;
+  const ps=PRE.std.p.map((x,i)=>({id:'P'+(i+1),at:x[0],bt:x[1]})),r=sim(a,q,ag,ps);
+  let st=0,sw=0;
+  const inp='5\n'+ps.map(p=>p.at+' '+p.bt).join('\n')+(a==='RR'?'\n'+q:a==='MLFQ'?'\n'+q+' '+ag:'');
+  const out='PID AT BT CT TAT WT\n'+ps.map((p,i)=>{const c=r.ct[i],tt=c-p.at;st+=tt;sw+=tt-p.bt;return `${p.id}  ${p.at}  ${p.bt}  ${c}  ${tt}  ${tt-p.bt}`;}).join('\n')+`\nAvg TAT = ${(st/5).toFixed(2)}, Avg WT = ${(sw/5).toFixed(2)}`;
+  const gc=r.segs.map(s=>'| '+(s.i<0?'Idle':ps[s.i].id)+' ').join('')+'|\n'+r.segs.map(s=>s.s).concat(r.end).join(' → ');
+  $('p-io').innerHTML=`<p><b>Sample input</b> (${nm}, standard mix; first line is n, then AT BT per process):</p><pre></pre><p><b>Sample output</b>:</p><pre></pre><p><b>Gantt chart</b> (time boundaries below):</p><pre></pre>`;
+  const pr=$('p-io').querySelectorAll('pre');pr[0].textContent=inp;pr[1].textContent=out;pr[2].textContent=gc;
+}
+load('std');
+</script>
+</body>
+</html>
